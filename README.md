@@ -22,7 +22,7 @@ Then from `console window 1 enter:`
 Node.connect :"b@YOUR-COMPUTER-NAME"
 PresenceTest.NodeManager.track_customer(1)
 PresenceTest.NodeManager.track_customer(2)
-PresenceTest.NodeManager.untrack_customer(2) #ideally in my scenario this line produces no notifications
+PresenceTest.NodeManager.untrack_customer(2) #ideally this line produces no notifications or there is some way to differentiate between drops and untracks
 ```
 What you should be seeing is messages printed in each console window (from `NodeManager.handle_info/2`) that notify of leaves and joins in a cluster.
 _You could also try exiting (CTRL+C x 2) the node on console 1 and see the leave diff popping up in console 2_
