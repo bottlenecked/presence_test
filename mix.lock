@@ -1,3 +1,3 @@
 %{
-  "phoenix_pubsub": {:git, "https://github.com/phoenixframework/phoenix_pubsub.git", "3c12bf0b8771a479ab262aba7d34b913faa9f914", []},
+  "phoenix_pubsub": {:hex, :phoenix_pubsub, "1.1.1", "6668d787e602981f24f17a5fbb69cc98f8ab085114ebfac6cc36e10a90c8e93c", [:mix], [], "hexpm"},
 }

@@ -1,3 +1,7 @@
+# This file is an almost exact copy of https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/presence.ex
+# minus some callbacks that expected %Phoenix.Socket{} structs and 
+# some method signatures that changed to expecting plain maps instead of %Broadcast{} structs
+
 defmodule Phoenix.Presence do
   @moduledoc """
   Provides Presence tracking to processes and channels.
@@ -43,9 +47,9 @@ defmodule Phoenix.Presence do
         end
 
         def handle_info(:after_join, socket) do
-          push socket, "presence_state", Presence.list(socket)
+          push(socket, "presence_state", Presence.list(socket))
           {:ok, _} = Presence.track(socket, socket.assigns.user_id, %{
-            online_at: inspect(System.system_time(:seconds))
+            online_at: inspect(System.system_time(:second))
           })
           {:noreply, socket}
         end
@@ -101,11 +105,12 @@ defmodule Phoenix.Presence do
   information, while maintaining the required `:metas` field from the
   original presence data.
   """
+
   @type presences :: %{String.t => %{metas: [map()]}}
   @type presence :: %{key: String.t, meta: map()}
   @type topic :: String.t
 
-  @callback start_link(Keyword.t) :: {:ok, pid()} | {:error, reason :: term()} :: :ignore
+  @callback start_link(Keyword.t) :: {:ok, pid()} | {:error, reason :: term()} | :ignore
   @callback init(Keyword.t) :: {:ok, state :: term} | {:error, reason :: term}
   @callback track(pid, topic, key :: String.t, meta :: map()) :: {:ok, binary()} | {:error, reason :: term()}
   @callback untrack(pid, topic, key :: String.t) :: :ok
@@ -158,6 +163,10 @@ defmodule Phoenix.Presence do
 
       def list(topic) do
         Phoenix.Presence.list(__MODULE__, topic)
+      end
+
+      def get_by_key(topic, key) do
+        Phoenix.Presence.get_by_key(__MODULE__, topic, key)
       end
 
       def handle_diff(diff, state) do
@@ -233,6 +242,36 @@ defmodule Phoenix.Presence do
 
     module.fetch(topic, grouped)
   end
+
+  @doc """
+  Returns the map of presence metadata for a topic-key pair.
+
+  ## Examples
+
+  Uses the same data format as `Phoenix.Presence.list/1`, but only
+  returns metadata for the presences under a topic and key pair. For example,
+  a user with key `"user1"`, connected to the same chat room `"room:1"` from two
+  devices, could return:
+
+      iex> MyPresence.get_by_key("room:1", "user1")
+      %{name: "User 1", metas: [%{device: "Desktop"}, %{device: "Mobile"}]}
+
+  Like `Phoenix.Presence.list/1`, the presence metadata is passed to the `fetch`
+  callback of your presence module to fetch any additional information.
+  """
+  def get_by_key(module, topic, key) do
+    string_key = to_string(key)
+
+    case Phoenix.Tracker.get_by_key(module, topic, key) do
+      [] -> []
+      [_|_] = pid_metas ->
+        metas = Enum.map(pid_metas, fn {_pid, meta} -> meta end)
+        %{^string_key => fetched_metas} = module.fetch(topic, %{string_key => %{metas: metas}})
+
+        fetched_metas
+    end
+  end
+
 
   defp group(presences) do
     presences
